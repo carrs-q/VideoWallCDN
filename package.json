@@ -1,0 +1,22 @@
+{
+  "name": "cdn",
+  "version": "0.0.1",
+  "description": "Content Delivery Network for Simulator",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Michael Gerber",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "chokidar": "^2.0.3",
+    "express": "^4.16.2",
+    "fs": "0.0.1-security",
+    "https": "^1.0.0",
+    "ms": "^2.1.1",
+    "npm": "^5.8.0",
+    "os": "^0.1.1",
+    "play-sound": "^1.1.2"
+  }
+}
