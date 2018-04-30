@@ -14,10 +14,14 @@
     "express": "^4.16.2",
     "fs": "0.0.1-security",
     "https": "^1.0.0",
+    "morse-node": "^0.1.1",
+    "morsify": "^0.5.0",
     "ms": "^2.1.1",
     "npm": "^5.8.0",
     "onoff": "^3.0.2",
     "os": "^0.1.1",
-    "play-sound": "^1.1.2"
+    "play-sound": "^1.1.2",
+    "safe-buffer": "^5.1.2",
+    "source-map": "^0.7.2"
   }
 }
