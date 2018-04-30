@@ -1,9 +1,10 @@
+
 var express = require ('express');
-//var https = require('https');
 var fs = require('fs');
 var config = require('./config/config.js');
 var bodyParser = require('body-parser');
 var os = require('os');
+
 
 
 var ifaces = os.networkInterfaces();
@@ -28,6 +29,7 @@ Object.keys(ifaces).forEach(function (ifname){
 		++alias;
 	});
 });
+var soundisPlaying=false;
 
 if(config.cdn.active){
 	var chokidar = require('chokidar');
@@ -77,31 +79,28 @@ if(config.cdn.active){
 }
 
 if(config.morse.active){
-	var GPIO = require('onoff').Gpio;
-	var led = new GPIO(4, 'out');
 	var morse = require('morsify');
 	var player = require('play-sound')(opts ={});
-	var soundisPlaying=false;
+	if(config.morse.rapspi){
+		var GPIO = require('onoff').Gpio;
+		var led = new GPIO(4, 'out');
+	}
 	app.post('/', function(req, res){
-		//TODO file SyncServer
-		console.log(req.query.event);
 		switch(req.query.event){
-			case 1:{ //Start
-				playMorse('start');
+			case '1':{ //Start
+				playMorse(config.morse.stats.start);
 			};break;
-			case 2:{ //Pause 
-				playMorse('pause');
+			case '2':{ //Pause 
+				playMorse(config.morse.stats.pause);
 			};break;
-			case 3:{ //Reset
-				playMorse('reset');
-	
+			case '3':{ //Reset
+				playMorse(config.morse.stats.reset);
 			};break;
 			default:{
 			}
 		}
 		res.status(200).end('done');
 	});
-	playSound('start');
 }
 
 
@@ -109,7 +108,9 @@ app.get("/", function (req, res){
 	res.status(200).end("huhu");
 });
 
+
 async function playMorse(clearText){
+	console.log(clearText);
 	if(config.morse.sound){
 		playSound(clearText);
 	}
@@ -122,7 +123,12 @@ async function playLED(encoded, pause){
 	if(!pause){
 		if(encoded.length>0){
 			let remind = encoded.substring(1, encoded.length);
-			led.writeSync(1); //ON
+			if(config.morse.rapspi){
+				led.writeSync(1); //ON
+			}
+			else{
+				console.log('LED ON');
+			}
 			switch(encoded[0]){
 				case '-': {
 					setTimeout(()=>playLED(remind, true), config.morse.timing.long);
@@ -135,7 +141,12 @@ async function playLED(encoded, pause){
 		}
 	}
 	else{
-		led.writeSync(0); //Off
+		if(config.morse.rapspi){
+			led.writeSync(0); //Off
+		}
+		else{
+			console.log('LED OFF');
+		}
 		if(encoded.length>0){
 			setTimeout(()=>playLED(encoded, false), config.morse.timing.off);
 		}
@@ -146,9 +157,9 @@ async function playLED(encoded, pause){
 async function playSound(string){
 	let source;
 	switch(string){
-		case 'start': source = './content/morse/start.wav';break;
-		case 'pause': source = './content/morse/pause.wav';break;
-		case 'reset': source = './content/morse/reset.wav';break;
+		case config.morse.stats.start: source = './content/morse/start.wav';break;
+		case config.morse.stats.pause: source = './content/morse/pause.wav';break;
+		case config.morse.stats.reset: source = './content/morse/reset.wav';break;
 	}
 	if(source){
 		if(!soundisPlaying){
@@ -184,14 +195,3 @@ app.listen(config.port , config.ip, function(){
 		process.exit(1);
 	}
 });
-
-
-//Obsolete
-//Generate Credentials
-/*
-var credentials = {
-	key : fs.readFileSync('./config/server.key', 'utf8'),
-	cert: fs.readFileSync('./config/server.crt', 'utf8')
-};
-var https = https.createServer(credentials, app);
-*/
