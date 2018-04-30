@@ -10,6 +10,7 @@ module.exports={
 		sound:	true,
 		led:	true,
 		rapspi:	false,		//is running on pi
+		gpioPin: 4,
 		timing:{
 			off: 	75,
 			short:	75,

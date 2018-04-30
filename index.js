@@ -83,7 +83,7 @@ if(config.morse.active){
 	var player = require('play-sound')(opts ={});
 	if(config.morse.rapspi){
 		var GPIO = require('onoff').Gpio;
-		var led = new GPIO(4, 'out');
+		var led = new GPIO(config.morse.gpioPin, 'out');
 	}
 	app.post('/', function(req, res){
 		switch(req.query.event){
