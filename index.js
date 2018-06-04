@@ -4,8 +4,13 @@ var fs = require('fs');
 var config = require('./config/config.js');
 var bodyParser = require('body-parser');
 var os = require('os');
+var request = require('request');
 
-
+var ifaces = os.networkInterfaces();
+var headers = {
+    'User-Agent':   config.name,
+    'Content-Type': config.headers.ContentType
+};
 
 var ifaces = os.networkInterfaces();
 var app = express();
@@ -30,6 +35,7 @@ Object.keys(ifaces).forEach(function (ifname){
 	});
 });
 var soundisPlaying=false;
+var wav;
 
 if(config.cdn.active){
 	var chokidar = require('chokidar');
@@ -78,24 +84,27 @@ if(config.cdn.active){
 	});
 }
 
-if(config.morse.active){
+if(config.sync.active){
 	var morse = require('morsify');
 	var player = require('play-sound')(opts ={});
-	if(config.morse.rapspi){
+	if(config.sync.rapspi){
 		var GPIO = require('onoff').Gpio;
-		var led = new GPIO(config.morse.gpioPin, 'out');
+		var led = new GPIO(config.sync.gpioPin, 'out');
 	}
 	app.post('/', function(req, res){
 		switch(req.query.event){
 			case '1':{ //Start
-				playMorse(config.morse.stats.start);
+				playMorse(config.sync.stats.start);
 			};break;
 			case '2':{ //Pause 
-				playMorse(config.morse.stats.pause);
+				playMorse(config.sync.stats.pause);
 			};break;
 			case '3':{ //Reset
-				playMorse(config.morse.stats.reset);
+				playMorse(config.sync.stats.reset);
 			};break;
+			case '4':{ //TOR
+				playMorse(config.sync.stats.tor);
+			}
 			default:{
 			}
 		}
@@ -111,19 +120,18 @@ app.get("/", function (req, res){
 
 async function playMorse(clearText){
 	console.log(clearText);
-	if(config.morse.sound){
+	if(config.sync.sound){
 		playSound(clearText);
 	}
 	var encoded = morse.encode(clearText);
 	playLED(encoded, false);
 	console.log('signal:'+clearText);
 }
-
 async function playLED(encoded, pause){
 	if(!pause){
 		if(encoded.length>0){
 			let remind = encoded.substring(1, encoded.length);
-			if(config.morse.rapspi){
+			if(config.sync.rapspi){
 				led.writeSync(1); //ON
 			}
 			else{
@@ -131,24 +139,24 @@ async function playLED(encoded, pause){
 			}
 			switch(encoded[0]){
 				case '-': {
-					setTimeout(()=>playLED(remind, true), config.morse.timing.long);
+					setTimeout(()=>playLED(remind, true), config.sync.timing.long);
 				};break;
 				case '.':{
-					setTimeout(()=>playLED(remind, true), config.morse.timing.short);
+					setTimeout(()=>playLED(remind, true), config.sync.timing.short);
 				};break;
 				default: playLED(remind, true); break;
 			}
 		}
 	}
 	else{
-		if(config.morse.rapspi){
+		if(config.sync.rapspi){
 			led.writeSync(0); //Off
 		}
 		else{
 			console.log('LED OFF');
 		}
 		if(encoded.length>0){
-			setTimeout(()=>playLED(encoded, false), config.morse.timing.off);
+			setTimeout(()=>playLED(encoded, false), config.sync.timing.off);
 		}
 	}
 	
@@ -157,9 +165,10 @@ async function playLED(encoded, pause){
 async function playSound(string){
 	let source;
 	switch(string){
-		case config.morse.stats.start: source = './content/morse/start.wav';break;
-		case config.morse.stats.pause: source = './content/morse/pause.wav';break;
-		case config.morse.stats.reset: source = './content/morse/reset.wav';break;
+		case config.sync.stats.start: source = './content/morse/start.wav';break;
+		case config.sync.stats.pause: source = './content/morse/pause.wav';break;
+		case config.sync.stats.reset: source = './content/morse/reset.wav';break;
+		case config.sync.stats.tor: source = './content/morse/tor.wav';break;
 	}
 	if(source){
 		if(!soundisPlaying){
@@ -178,20 +187,36 @@ async function playSound(string){
 	}
 }
 
+async function sendToGoPro(code){
+	var opt ={
+		url: 'http://'+config.goPro.settings.ip+'/status?p='+code,
+		method: 'GET',
+		headers: headers
+	}
+	request(opt, function(error, response, body){
+		if(!error && response.statusCode == 200){
+			console.log('Successful');
+		}
+		else{
+			console.log(error);
+		}
+	});
+}
 
 app.listen(config.port , config.ip, function(){
 	let projectPath = __dirname+'\\cdn\\';
 	console.log(config.name+' started ');
 	console.log('Address: '+ config.ip +':'+config.port);
-	if(config.morse.active){
-		console.log('Sync-Module is active');
+	if(config.sync.active){
+		console.log('James does Sync');
 	}
 	if(config.cdn.active){
-		console.log('CDN-Module is active')
+		console.log('James does CDN')
 	}
-	if(!config.morse.active && !config.cdn.active){
-		console.log('No modules activated. Server shut down...');
-		console.log('To activate modules check config file');
-		process.exit(1);
+	if(config.gopro.active){
+		console.log('James does GoPro');
+	}
+	if(config.db.active){
+		console.log('James does DB-Logging');
 	}
 });
