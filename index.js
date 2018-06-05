@@ -23,7 +23,7 @@ Object.keys(ifaces).forEach(function (ifname){
 			return
 		}
 		if(alias >=1){
-			console.log(ifname + ':' + alias, iface.address);
+			//console.log(ifname + ':' + alias, iface.address);
 		}
 		else{
 			if(ifname=='wlan0'){
@@ -73,7 +73,7 @@ if(config.cdn.active){
 		res.status(200).end(projects.toString());
 	});
 	app.get('/cdn/:folder/:file', function (req, res){
-		console.log(req.params);
+		//console.log(req.params);
 		var file = __dirname + '/cdn/' + req.params.folder +'/'+req.params.file; 
 		if(fs.existsSync(file)){
 			res.status(200).download(file);
@@ -104,8 +104,11 @@ if(config.sync.active){
 			};break;
 			case '4':{ //TOR
 				playMorse(config.sync.stats.tor);
-			}
+			};break;
 			default:{
+                if(req.query.event!=0){
+                   console.log(req.query.event); 
+                }
 			}
 		}
 		res.status(200).end('done');
@@ -119,13 +122,13 @@ app.get("/", function (req, res){
 
 
 async function playMorse(clearText){
-	console.log(clearText);
 	if(config.sync.sound){
 		playSound(clearText);
 	}
-	var encoded = morse.encode(clearText);
-	playLED(encoded, false);
-	console.log('signal:'+clearText);
+    if(config.sync.led){
+        var encoded = morse.encode(clearText);
+	    playLED(encoded, false);
+    }
 }
 async function playLED(encoded, pause){
 	if(!pause){
@@ -179,11 +182,11 @@ async function playSound(string){
 			});
 		}
 		else{
-			console.log(string + ' sound not played');
+			//console.log(string + ' sound not played');
 		}
 	}
 	else{
-		console.log(string + ' sound not installed');
+		//console.log(string + ' sound not installed');
 	}
 }
 
@@ -195,7 +198,7 @@ async function sendToGoPro(code){
 	}
 	request(opt, function(error, response, body){
 		if(!error && response.statusCode == 200){
-			console.log('Successful');
+			//console.log('Successful');
 		}
 		else{
 			console.log(error);
