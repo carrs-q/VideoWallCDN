@@ -53,5 +53,10 @@ module.exports={
             btConnectTry:   false,
             isRecording:    false,
         }
-    }
+	}, 
+	log:{
+		writeToDisk:	true,
+		logFolder:		'logs',
+		researchFolder:	'records'
+	}
 }

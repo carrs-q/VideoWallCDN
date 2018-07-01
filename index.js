@@ -10,15 +10,19 @@
 */
 
 
-const express = require ('express');
-const fs = require('fs');
-const bodyParser = require('body-parser');
-const os = require('os');
-const request = require('request');
-const   wifi = require('node-wifi');
-const goPro = require('goproh4');
+const express 		= require ('express');
+const fs 			= require('fs');
+const path 			= require('path');
+const bodyParser 	= require('body-parser');
+const os 			= require('os');
+const request 		= require('request');
+const wifi 			= require('node-wifi');
+const goPro 		= require('goproh4');
 
-var config = require('./config/config.js');
+var config 		= require('./config/config.js');
+
+const logDIR 		= __dirname + '\\' +config.log.logFolder+ '\\';
+const recordDIR 	= __dirname + '\\' +config.log.researchFolder+ '\\';
 
 const CONNECTMSG = 'connect';
 const KEEPALIVEMSG = 'char-write-req 2f 03170101';
@@ -499,3 +503,5 @@ app.listen(config.port , config.ip, function(){
 if(!config.goPro.connectBT){
     connectWithGoPro();
 }
+
+
