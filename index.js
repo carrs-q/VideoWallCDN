@@ -8,6 +8,7 @@
 		2. 'nmcli general permissions' (all need to be on yes)
 		3. if not yes 'chmod u+s,a-w /usr/bin/nmcli'
 */
+'use strict';
 
 
 const express 		= require ('express');
@@ -41,7 +42,7 @@ if( config.sync.active &&
 	config.goPro.connectBT &&
     config.goPro.states.btIsPared && 
     config.goPro.states.keepAlive){
-    var { spawn, exec } = require('child_process');
+    var { spawn } = require('child_process');
     var cmdProcess = spawn('gatttool', ['-t', 'random', '-b', config.goPro.settings.btmac, '-I']);
     
     cmdProcess.stdout.on( 'data', data => {
@@ -56,7 +57,6 @@ if( config.sync.active &&
                 }
                 config.goPro.states.btConnectTry=true;
             writeToChildProcess(cmdProcess, CONNECTMSG);
-    
         }else if(data.toString().includes('Connection successful')){
             config.goPro.states.btIsConnected=true;
             btKeepAliveLoop=setInterval(keepAlive, config.goPro.settings.btInterval*1000);
@@ -503,5 +503,3 @@ app.listen(config.port , config.ip, function(){
 if(!config.goPro.connectBT){
     connectWithGoPro();
 }
-
-
