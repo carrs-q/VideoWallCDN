@@ -31,9 +31,10 @@ module.exports={
 		}
 	},
 	goPro:{
-        debug:          true,
-        connectBT:      false,
-        connectWifi:    true,
+	active:		true,
+        debug:          false,
+        connectBT:      true,
+        connectWifi:   	true,
         settings: {
             name:           'GP55801580',
             pass:           'canoe7550',
@@ -47,13 +48,13 @@ module.exports={
         states:{
             //DO NOT CHANGE THIS VALUES
             keepAlive:      true,
-			btIsPared:      true,
-			initSettings:   false,
+	    btIsPared:      true,
+	    initSettings:   false,
             btIsConnected:  false,
             btConnectTry:   false,
             isRecording:    false,
         }
-	}, 
+	},
 	log:{
 		writeToDisk:	true,
 		logFolder:		'logs',
