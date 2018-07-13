@@ -1,22 +1,23 @@
 module.exports={
 	name: 	'Simulator James',
 	port:	1605,
-	ip:		'192.168.0.216',
+	ip:		'131.181.139.130',
 	netconf:{
         serverCon:     'eth0',
         goPro:         'wlan0'
     },
 	cdn:{
-		active: false,
+		active: true,
+		cdnFolder: 'cdn'
 	},
 	headers:{
         ContentType:    'application/x-www-form-urlencoded',
     },
 	sync:{
 		active: true,
-		sound:	true,
-		led:	true,
-		rapspi:	true,		//IS PI (SYSTEM AND HARDWARE SPECIFIC)
+		sound:	false,
+		led:	false,
+		rapspi:	false,		//IS PI (SYSTEM AND HARDWARE SPECIFIC)
 		gpioPin: 4,
 		timing:{
 			off: 	75,
@@ -28,13 +29,19 @@ module.exports={
 			pause: 	'pause',
 			reset: 	'reset',
 			tor:	'tor'
+		},
+		log:{
+			storeRecords:	true,
+			logFolder:		'log',
+			researchFolder:	'record',
+			fileFormat:		'txt',
 		}
 	},
 	goPro:{
-	active:		true,
+	active:		false,
         debug:          false,
-        connectBT:      true,
-        connectWifi:   	true,
+        connectBT:      false,
+        connectWifi:   	false,
         settings: {
             name:           'GP55801580',
             pass:           'canoe7550',
@@ -54,10 +61,5 @@ module.exports={
             btConnectTry:   false,
             isRecording:    false,
         }
-	},
-	log:{
-		writeToDisk:	true,
-		logFolder:		'logs',
-		researchFolder:	'records'
 	}
 }

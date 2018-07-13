@@ -19,11 +19,14 @@ const os 			= require('os');
 const request 		= require('request');
 const wifi 			= require('node-wifi');
 const goPro 		= require('goproh4');
+const chokidar      = require('chokidar');
+const morse         = require('morsify');
+const player        = require('play-sound')(opts ={});
+var config 		    = require('./config/config.js');
 
-var config 		= require('./config/config.js');
-
-const logDIR 		= __dirname + '\\' +config.log.logFolder+ '\\';
-const recordDIR 	= __dirname + '\\' +config.log.researchFolder+ '\\';
+const projectPath   = __dirname +'/'  +config.cdn.cdnFolder+'/';
+const logDIR 		= __dirname + '/' +config.sync.log.logFolder+ '/';
+const recordDIR 	= __dirname + '/' +config.sync.log.researchFolder+ '/';
 
 const CONNECTMSG = 'connect';
 const KEEPALIVEMSG = 'char-write-req 2f 03170101';
@@ -50,10 +53,10 @@ if( config.sync.active &&
             && !config.goPro.states.btIsConnected
             && !config.goPro.states.btConnectTry){
                 if(config.goPro.debug){
-                    console.log(data.toString());
+                    writeLog(data.toString(), false, true);
                 }
                 else{
-                    console.log('Try to reach Bluetooth device');
+                    writeLog('Try to reach Bluetooth device', false, true);
                 }
                 config.goPro.states.btConnectTry=true;
             writeToChildProcess(cmdProcess, CONNECTMSG);
@@ -61,34 +64,33 @@ if( config.sync.active &&
             config.goPro.states.btIsConnected=true;
             btKeepAliveLoop=setInterval(keepAlive, config.goPro.settings.btInterval*1000);
             if(config.goPro.debug){
-                console.log(data.toString());
+                writeLog(data.toString(), false, true);
             }
             else{
-                console.log('BT connected to GoPro ' + config.goPro.settings.name);
+                writeLog('BT connected to GoPro ' + config.goPro.settings.name, true, true);
             }
 
             if(config.goPro.connectWifi){
-                console.log('Start Wifi searching');
+                writeLog('Start Wifi searching', false, true);
                 connectWithGoPro();
             }
         }
         else if(config.goPro.debug){
-            console.log(data.toString());
+            writeLog(data.toString(), false, true);
         }
     });
 
     cmdProcess.stderr.on( 'data', data => {
-        console.log( `stderr: ${data}` );
-    } );
-
+        writeLog(`stderr: ${data}`, false, true);
+    });
     cmdProcess.on( 'close', code => {
-        console.log( `child process exited with code ${code}` );
-    } );
+        writeLog(`child process exited with code ${code}`, false, true);
+    });
     //Send every 30 Seconds Keep Alive signal
     function keepAlive(){
         if(config.goPro.states.btIsConnected){
             if(config.goPro.debug){
-                console.log('Send Keep alive message');
+                writeLog(`Send Keep alive message`, false, true);
             }
             writeToChildProcess(cmdProcess, KEEPALIVEMSG);
         }
@@ -98,8 +100,8 @@ function killChildProcesses(){
 	cam.ready()
 	.then(()=>{
             return cam.set(72, 1); //LCD Display OFF
-	});
-        console.log('Bye Bye keep alive');
+    });
+        writeLog('Shutdown keep alive', false, true);
         writeToChildProcess(cmdProcess, DISCONNECTMSG);
         cmdProcess.stdin.end();
         cmdProcess.kill();
@@ -119,7 +121,7 @@ function connectWithGoPro(){
         });
         wifi.scan((err, networks)=>{
             if(err){
-                console.log('Wifi searching does not work');
+                writeLog('Wifi searching does not work', true, true);
             }
             else{
                 var wifiFound=false;
@@ -127,18 +129,18 @@ function connectWithGoPro(){
                     //console.log(networks);
                     networks.forEach((net)=>{
                         if(net.ssid==undefined){
-                            console.log('Undefined Network name');
+                            writeLog('Undefined Network name', false, true);
                         }else if(net.ssid==config.goPro.settings.name){
                             if(!config.goPro.states.wifiTryConnect && !wifiFound){
                                 wifiFound=true;
-                                console.log('Wifi found... try to connect');
+                                writeLog('Wifi found... try to connect', false, true);
                                 connectWifi(net, config.goPro.settings.pass);
                             }
                         }
                     });
                 }
                 if(!wifiFound){
-                    console.log('Wifi not found');
+                    writeLog('Wifi not found', false, true);
                     setTimeout(connectWithGoPro, 10*1000);
                 }
             }
@@ -153,7 +155,7 @@ function connectWifi(network, pass){
     }, (err)=>{
         if(err){
             if(err.toString().includes('No network with SSID')){
-                console.log('Wifi not found. Retry in '+config.goPro.settings.wifiInterval*5+' sec');
+                writeLog('Wifi not found. Retry in '+config.goPro.settings.wifiInterval*5+' sec', false, true);
             }
             else{
                 console.log(err);
@@ -163,7 +165,7 @@ function connectWifi(network, pass){
             }, config.goPro.settings.wifiInterval*5*1000);
         }
         else{
-            console.log('Wifi connected with ' + network.ssid);
+            writeLog('Wifi connected with ' + network.ssid, true, true);
 	    setTimeout(()=>{
 		goProInitSettings();
 	    }, 5000);
@@ -175,10 +177,10 @@ function connectWifi(network, pass){
 }
 
 function checkWifiStatus(){
-    wifi.scan((err, networks)=>{});
-    if(config.goPro.connectWifi){
-        goProGetStatus();
-    }
+    //TODO
+    /*
+
+    */
 }
 
 var ifaces = os.networkInterfaces();
@@ -207,7 +209,6 @@ var soundisPlaying=false;
 var wav;
 
 if(config.cdn.active){
-	var chokidar = require('chokidar');
 	Array.prototype.remove = function() {
 		var what, a = arguments, L = a.length, ax;
 		while (L && this.length) {
@@ -254,10 +255,6 @@ if(config.cdn.active){
 }
 
 if(config.sync.active){
-	var morse = require('morsify');
-	var player = require('play-sound')(opts ={});
-
-
 	if(config.sync.rapspi){
 		var GPIO = require('onoff').Gpio;
 		var led = new GPIO(config.sync.gpioPin, 'out');
@@ -282,10 +279,13 @@ if(config.sync.active){
 			};break;
 			case '5':{
 				killChildProcesses();
-			};break;
+            };break;
+            case '1605':{
+               
+            };break;
 			default:{
                 if(req.query.event!=0){
-                   console.log(req.query.event); 
+                    writeRecord(req.query.event);
                 }
 			}
 		}
@@ -295,9 +295,9 @@ if(config.sync.active){
 
 
 app.get("/", function (req, res){
+    //TODO Display logs
 	res.status(200).end("huhu");
 });
-
 
 async function playMorse(clearText){
 	if(config.sync.sound){
@@ -367,169 +367,251 @@ async function playSound(string){
 	}
 }
 
-
-
 async function goProStartRecording(){
-    if(!config.goPro.states.initSettings){
-       goProInitSettings();
-       setTimeout(goProStartRecording, 1500);
-    }
-    else{
-        if(!config.goPro.states.isRecording){
-            config.goPro.states.isRecording=true;
-            cam.ready()
-            .then(function (){//Start Recording
-                return cam.start();
-            })
-            .then(function (){
-                console.log('Video started');
-            });
-        }
-        else{
-            console.log('System is Busy');
-            if(!config.goPro.states.isRecording){
-                setTimeout(goProStartRecording, 1500);
-            }
-        }
+    if(config.goPro.active){
+        if(!config.goPro.states.initSettings){
+            goProInitSettings();
+            setTimeout(goProStartRecording, 1500);
+         }
+         else{
+             if(!config.goPro.states.isRecording){
+                 config.goPro.states.isRecording=true;
+                 cam.ready()
+                 .then(function (){//Start Recording
+                     return cam.start();
+                 })
+                 .then(function (){
+                     writeLog('GoPro Video recording started', true, true);
+                 });
+             }
+             else{
+                 writeLog('GoPro is busy', true, true);
+                 if(!config.goPro.states.isRecording){
+                     setTimeout(goProStartRecording, 1500);
+                 }
+             }
+         }
     }
 };
 
 function goProInitSettings(){
-    cam = new goPro.Camera({
-        ip:             config.goPro.settings.ip, 
-        broadcastip:    config.goPro.settings.broadcastip
-    });
-    if(!config.goPro.states.isRecording){
-        //GoPro Settings Doku
-        //https://github.com/citolen/goproh4/blob/master/lib/constant.js
-        //Default Settings
-        // Mode Video
-        // Video Resolution FullHD
-        // FPS 60
-        // FOV Wide
-        // Beep Sounds Off
-        // Display Off
-        // LEDs Off
-        // Voice Commands off
-        cam.ready()
-        .then(function(){
-            return cam.mode(0, 0); //Video Mode
-        })
-        .then(function(){
-            return cam.set(2, 9); //Video Resulution 1080
-        })
-        .then(function () {
-            return cam.set(3, 5); //120 FPS, 60 = 5, 80 = 4, 19 = 3, 100 = 2, 120=1
-        })
-        .then(function () {
-            return cam.set(4, 1); //FOV Wide
-        })
-	.then(function(){
-	    return cam.set(78, 0); //Image Stabilisation OFF
-	})
-	.then(function(){
-	   return  cam.set(8, 1); //Video Low Light On
-	})
-	.then(function(){
-	  return cam.set(10, 0); //Deactivate Protune
-	})
-        .then(function () {
-            return cam.set(81, 3); //RAW Audio OFF
-        })
-        .then(function(){
-            return cam.set(56, 2); // Beep OFF
-        })
-	.then(function(){
-            return cam.set(49, 2); //LCD Brightness Low
-        })
-	.then(function(){
-            return cam.set(50, 0); //Screen Lock 51
-        })
-	.then(function(){
-            return cam.set(51, 0); //LCD Sleep Off
-        })
-	.then(function(){
-            return cam.set(72, 0); //LCD Display OFF
-        })
-        .then(function(){
-	    return cam.set(86, 0); //Voice Command OFF
-        })
-        .then(function(){
-            return cam.set(55, 0); //LED Blink OFF
-        }) //TODO Add Void Commands off again
-	.then(function(){
-            return cam.set(83, 0); //GPS OFF
-        }).
-        then(()=>{
-            config.goPro.states.initSettings=true;
-            if(config.goPro.debug){
-                console.log('GoPro set to research Settings');
-	    }
-	    return true;
+    if(config.goPro.active){
+        cam = new goPro.Camera({
+            ip:             config.goPro.settings.ip, 
+            broadcastip:    config.goPro.settings.broadcastip
         });
+        if(!config.goPro.states.isRecording){
+            //GoPro Settings Doku
+            //https://github.com/citolen/goproh4/blob/master/lib/constant.js
+            //Default Settings
+            // Mode Video
+            // Video Resolution FullHD
+            // FPS 60
+            // FOV Wide
+            // Beep Sounds Off
+            // Display Off
+            // LEDs Off
+            // Voice Commands off
+            cam.ready()
+            .then(function(){
+                return cam.mode(0, 0); //Video Mode
+            })
+            .then(function(){
+                return cam.set(2, 9); //Video Resulution 1080
+            })
+            .then(function () {
+                return cam.set(3, 5); //120 FPS, 60 = 5, 80 = 4, 19 = 3, 100 = 2, 120=1
+            })
+            .then(function () {
+                return cam.set(4, 1); //FOV Wide
+            })
+        .then(function(){
+            return cam.set(78, 0); //Image Stabilisation OFF
+        })
+        .then(function(){
+        return  cam.set(8, 1); //Video Low Light On
+        })
+        .then(function(){
+        return cam.set(10, 0); //Deactivate Protune
+        })
+            .then(function () {
+                return cam.set(81, 3); //RAW Audio OFF
+            })
+            .then(function(){
+                return cam.set(56, 2); // Beep OFF
+            })
+        .then(function(){
+                return cam.set(49, 2); //LCD Brightness Low
+            })
+        .then(function(){
+                return cam.set(50, 0); //Screen Lock 51
+            })
+        .then(function(){
+                return cam.set(51, 0); //LCD Sleep Off
+            })
+        .then(function(){
+                return cam.set(72, 0); //LCD Display OFF
+            })
+            .then(function(){
+            return cam.set(86, 0); //Voice Command OFF
+            })
+            .then(function(){
+                return cam.set(55, 0); //LED Blink OFF
+            }) //TODO Add Void Commands off again
+        .then(function(){
+                return cam.set(83, 0); //GPS OFF
+            }).
+            then(()=>{
+                config.goPro.states.initSettings=true;
+                if(config.goPro.debug){
+                    writeLog('GoPro set to research Settings', true, true);
+            }
+            return true;
+            });
+        }
     }
 };
 
 async function goProStopRecording(){
-    console.log('Video stopped');
-    cam.stop().then(function(){
-        config.goPro.states.isRecording=false;
-    });
-};
-
-async function goProTagMoment(){
-    if(config.goPro.states.isRecording){
-        var opt ={
-            url: 'http://10.5.5.9/gp/gpControl/command/storage/tag_moment',
-            method: 'GET',
-            headers: headers
-        }
-        request(opt, function(error, response, body){
-            if(!error && response.statusCode == 200){
-                console.log('TOR Tagged');
-            }
-            else{
-                console.log(error);
-            }
+    if(config.goPro.active){
+        cam.stop().then(function(){
+            config.goPro.states.isRecording=false;
+            writeLog('GoPro Video recording stopped tagged', true, true);
         });
     }
 };
 
-async function goProGetStatus(){
-    var opt ={
-		url: 'http://10.5.5.9/gp/gpControl/command/storage/tag_moment',
-		method: 'GET',
-		headers: headers
-	}
-	/*request(opt, function(error, response, body){
-		if(!error && response.statusCode == 200){
-            if(config.goPro.debug){
-                //console.log(body);
+async function goProTagMoment(){
+    if(config.goPro.active){
+        if(config.goPro.states.isRecording){
+            var opt ={
+                url: 'http://10.5.5.9/gp/gpControl/command/storage/tag_moment',
+                method: 'GET',
+                headers: headers
             }
-		}
-		else{
-			//console.log(error);
-		}
-	});*/
+            request(opt, function(error, response, body){
+                if(!error && response.statusCode == 200){
+                    writeLog('GoPro TOR tagged', true, true);
+                }
+                else{
+                    writeLog(error, false, true);
+
+                }
+            });
+        }
+    }
 };
 
 
 app.listen(config.port , config.ip, function(){
-	let projectPath = __dirname+'\\cdn\\';
-	console.log(config.name+' started ');
-	console.log('Address: '+ config.ip +':'+config.port);
+	writeLog(config.name+' started ', true, false);
+    writeLog('Address: '+ config.ip +':'+config.port, true, false);
 	if(config.sync.active){
-		console.log('James does Sync');
+		writeLog('James does Sync', true, true);    
 	}
 	if(config.cdn.active){
-		console.log('James does CDN');
-		console.log('CDN folder: '+projectPath);
+		writeLog('James does CDN', true, true);        
 	}
 	if(config.goPro.active){
-		console.log('James does GoPro');
+		writeLog('James does GoPro', true, true);
 	}
 });
 
 if(!config.goPro.connectBT){
     connectWithGoPro();
 }
+
+
+async function writeLog(msg, display, date){
+    let dateString='';
+    if(date){
+        dateString=getFormatDate()+"\t";
+    }
+
+    if(display){
+        console.log(dateString+msg);
+    }
+    writeInfile(logDIR, getLogFileName(), dateString+msg);
+}
+
+async function writeRecord(rec){
+    if(rec){
+        var recArr = rec.split("\n");
+        if(recArr.length>=5){
+            let participant = recArr[5].split(':')[1].replace(/\s/g, '');
+            let scenario = recArr[4].split(':')[1].replace(/\s/g, '');
+            let participantFolder= recordDIR+participant+"/";
+            let scenarioFolder = participantFolder+scenario+"/";
+            folderExist(recordDIR);
+            folderExist(participantFolder);
+            folderExist(scenarioFolder);
+            let filename= scenarioFolder + getLogFileName();
+            let writefile = rec.replaceAll('\n','\r\n');
+            if(fs.existsSync(filename)){
+                let message='\r\n' + writefile;
+                fs.appendFileSync(filename, message, (err)=>{
+                    if(err){
+                        writeLog(rec, false, false);
+                        console.log('Error while appending to file');
+                    }
+                });
+            }
+            else{
+                fs.writeFileSync(filename, writefile, (err)=>{
+                 
+                    if(err){
+                        writeLog(rec, false, false);
+                        console.log('Error while writing to file');
+                    }
+                });
+            }
+        }
+    }
+}
+
+async function writeInfile(path, file, message){
+    folderExist(path);
+    let filePath = path+file;
+    if(fs.existsSync(filePath)){
+        message='\r\n' + message;
+        fs.appendFileSync(filePath, message, (err)=>{
+            if(err){
+                console.log('Error while appending to file');
+            }
+        });
+    }
+    else{
+        fs.writeFileSync(filePath, message, (err)=>{
+         
+            if(err){
+
+                console.log('Error while writing to file');
+            }
+        });
+    }
+
+}
+function folderExist(fullPath){
+    if(!fs.existsSync(fullPath)){
+        fs.mkdirSync(fullPath);
+    }
+}
+function getFormatDate(){
+    let cd = new Date(); 
+    return ('0' + cd.getHours()).slice(-2)+":"+
+           ('0' + cd.getMinutes()).slice(-2)+" Uhr "+
+           ('0' + cd.getDate()).slice(-2)+"."+
+           ('0' +(cd.getMonth()+1)).slice(-2)+"."+
+           cd.getFullYear();
+}
+function getLogFileName(){
+    let cd = new Date(); 
+    return cd.getFullYear()+"_"+
+           ('0' +(cd.getMonth()+1)).slice(-2)+"_"+
+           ('0' + cd.getDate()).slice(-2)+"."+config.sync.log.fileFormat;
+}
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.replace(new RegExp(search, 'g'), replacement);
+};

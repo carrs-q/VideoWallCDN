@@ -38,6 +38,8 @@ jspm_packages/
 
 #CDN files
 cdn/
+record/
+log/
 config/certs/
 
 # Typescript v1 declaration files
