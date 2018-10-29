@@ -8,7 +8,7 @@ cd "C:\Users\Development\... PATH to CDN"
 cmd /k node index.js  
 ```
 ## CDN Files
-1. create Folder "cdn" in the rood directory (is already in gitignore)
+1. create Folder "cdn" in the root directory (is already in gitignore)
 2. create Folder in cdn with the project title
 3. insert files (names need to fit the given names)
 
