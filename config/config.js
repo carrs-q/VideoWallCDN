@@ -14,7 +14,7 @@ module.exports={
         ContentType:    'application/x-www-form-urlencoded',
     },
 	sync:{
-		active: true,
+		active: false,
 		sound:	false,
 		led:	false,
 		rapspi:	false,		//IS PI (SYSTEM AND HARDWARE SPECIFIC)

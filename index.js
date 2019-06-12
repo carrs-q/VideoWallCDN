@@ -97,15 +97,26 @@ if( config.sync.active &&
     }
 }
 function killChildProcesses(){
-	cam.ready()
-	.then(()=>{
+    if(config.goPro.active){
+       	cam.ready()
+        .then(()=>{
+            config.goPro.active=false;
+            writeLog('Write GoPro default', false, true);
             return cam.set(72, 1); //LCD Display OFF
-    });
+        })
+        .then(()=>{
+            killChildProcesses();
+        }); 
+    }
+    else{
         writeLog('Shutdown keep alive', false, true);
         writeToChildProcess(cmdProcess, DISCONNECTMSG);
         cmdProcess.stdin.end();
         cmdProcess.kill();
         clearInterval(btKeepAliveLoop);
+    }
+
+        
 }
 
 async function writeToChildProcess(childProcess, execCmd){
@@ -279,9 +290,6 @@ if(config.sync.active){
 			};break;
 			case '5':{
 				killChildProcesses();
-            };break;
-            case '1605':{
-               
             };break;
 			default:{
                 if(req.query.event!=0){
