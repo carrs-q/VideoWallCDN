@@ -1,7 +1,7 @@
 module.exports={
 	name: 	'Simulator James',
 	port:	1605,
-	ip:		'131.181.139.130',
+	ip:		'127.0.0.1',
 	netconf:{
         serverCon:     'eth0',
         goPro:         'wlan0'
@@ -43,12 +43,12 @@ module.exports={
         connectBT:      false,
         connectWifi:   	false,
         settings: {
-            name:           'GP55801580',
-            pass:           'canoe7550',
+            name:           'GoProWifiName',
+            pass:           'GoProWifiPass',
             ip:             '10.5.5.9',
             broadcastip:    '10.5.5.255',
-            wifimac:        'CC:46:D6:69:CD:01',
-            btmac:          'F0:34:06:81:03:08',
+            wifimac:        'CC:46:MACADRESS',
+            btmac:          'F0:34:BLUETOOTHADDRESS',
             btInterval:     30,
             wifiInterval:   2,
         },
