@@ -15,9 +15,9 @@ cd "C:\Users\Development\... PATH to CDN"
 cmd /k node index.js  
 ```
 ## CDN Files
-1. create Folder "cdn" in the root directory (is already in gitignore)
-2. create Folder in cdn with the project title
-3. insert files (names need to fit the given names)
+1. Create folder "cdn" in the root directory (is already in gitignore)
+2. Create folder in cdn with the project title ```./cdn/scenario1```
+3. Insert files (names need to fit the given names)
 
 ## Clean Up Computer from Files
 Unity stores the files in AppData of the current logged in User
