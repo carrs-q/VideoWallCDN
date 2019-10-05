@@ -1,4 +1,11 @@
 # VideoWallCDN
+## Install NodeJS and CDN
+1. [install and download](https://nodejs.org/en/)
+2. Clone Repository 
+3. Change in Terminal in the directory
+4. ```npm install``` to download repositories 
+5. ```node index.js``` to start Content Deliviery Network
+
 ## Startup .bad for Windows Computers 
 ```bad
 @echo off
